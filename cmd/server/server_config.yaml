@@ -1,0 +1,13 @@
+database:
+ host: roundhouse.proxy.rlwy.net
+ port: 37390
+ user: mongo
+ password: fcc64D6DA14hG1CDAFfFFFgbChfaaH3d
+ secret: secret
+grpc:
+ port: 50051
+ cert_path: ../creds/server/server-cert.pem
+ key_path: ../creds/server/server-key.pem
+ ca_cert_path: ../creds/ca-cert.pem
+auth:
+ secret: your_grpc_secret

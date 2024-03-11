@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package = "github.com/JustWorking42/go-password-manager/proto";
+
+import "google/protobuf/empty.proto";
+
+service PassManager {
+    rpc Register(Creds) returns (google.protobuf.Empty);
+    rpc Login(Creds) returns (google.protobuf.Empty);
+    rpc AddPassword(Password) returns (google.protobuf.Empty);
+    rpc GetPassword(GetPasswordRequest) returns (Password);
+    rpc AddCard(Card) returns (google.protobuf.Empty);
+    rpc GetCard(GetCardRequest) returns (Card);
+    rpc AddNote(Note) returns (google.protobuf.Empty);
+    rpc GetNote(GetNoteRequest) returns (Note);
+    rpc AddBytes(Bytes) returns (google.protobuf.Empty);
+    rpc GetBytes(GetBytesRequest) returns (Bytes);
+}
+
+message Creds {
+    string login =  1;
+    string password =  2;
+}
+
+message GetPasswordRequest {
+    string serviceName =  1;
+}
+
+message Password {
+    string serviceName =  1;
+    string serviceLogin =  2;
+    string servicePassword =  3;
+}
+
+message GetCardRequest {
+    string cardName =  1;
+}
+
+message Card {
+    string cardName =  1;
+    string cardNumber =  2;
+    string cardCVC =  3;
+    string cardDate =  4;
+    string cardFI = 5;
+}
+
+
+message Note {
+    string noteName =  1;
+    string note =  2;
+}
+
+message GetNoteRequest {
+    string noteName =  1;
+}
+
+message Bytes {
+    string bytesName =  1;
+    bytes value =  2;
+}
+
+message GetBytesRequest {
+    string bytesName =  1;
+}

@@ -1,0 +1,8 @@
+grpc:
+  address: localhost:50051
+  cert_path: ../creds/client/client-cert.pem
+  key_path: ../creds/client/client-key.pem
+  ca_cert_path: ../creds/ca-cert.pem
+session:
+  session_path: ./session
+  db_secret: "1234567890123456"

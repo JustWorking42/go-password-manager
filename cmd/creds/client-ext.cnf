@@ -1,0 +1,4 @@
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+subjectAltName = IP:127.0.0.1,DNS:localhost,IP:0.0.0.0
