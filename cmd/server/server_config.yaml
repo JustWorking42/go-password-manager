@@ -1,13 +1,13 @@
 database:
- host: roundhouse.proxy.rlwy.net
- port: 37390
- user: mongo
- password: fcc64D6DA14hG1CDAFfFFFgbChfaaH3d
- secret: secret
+ host: ${PASS_DB_HOST:roundhouse.proxy.rlwy.net}
+ port: ${PASS_DB_PORT:37390}
+ user: ${PASS_DB_USER:mongo}
+ password: ${PASS_DB_PASSWORD:fcc64D6DA14hG1CDAFfFFFgbChfaaH3d}
+ secret: ${PASS_DB_SECRET:secret}
 grpc:
- port: 50051
- cert_path: ../creds/server/server-cert.pem
- key_path: ../creds/server/server-key.pem
- ca_cert_path: ../creds/ca-cert.pem
+ port: ${PASS_GRPC_PORT:50051}
+ cert_path: ${PASS_SERVER_CERT_PATH:../creds/server/server-cert.pem}
+ key_path: ${PASS_SERVER_KEY_PATH:../creds/server/server-key.pem}
+ ca_cert_path: ${PASS_ROOT_CERT_PATH:../creds/ca-cert.pem}
 auth:
- secret: your_grpc_secret
+ secret: ${PASS_GRPC_SECRET:your_grpc_secret}

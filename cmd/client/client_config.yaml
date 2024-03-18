@@ -1,8 +1,8 @@
 grpc:
-  address: localhost:50051
-  cert_path: ../creds/client/client-cert.pem
-  key_path: ../creds/client/client-key.pem
-  ca_cert_path: ../creds/ca-cert.pem
+  address: ${PASS_GRPC_ADDRESS:localhost}:${PASS_GRPC_PORT:50051}
+  cert_path: ${PASS_CLIENT_CERT_PATH:../creds/client/client-cert.pem}
+  key_path: ${PASS_CLIENT_KEY_PATH:../creds/client/client-key.pem}
+  ca_cert_path: ${PASS_ROOT_CERT_PATH:../creds/ca-cert.pem}
 session:
-  session_path: ./session
-  db_secret: "1234567890123456"
+  session_path: ${PASS_SESSION_PATH:./session}
+  db_secret: ${PASS_SESSION_SECRET:"1234567890123456"}

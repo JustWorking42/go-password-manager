@@ -7,7 +7,7 @@ import (
 	"github.com/JustWorking42/go-password-manager/internal/client/repository"
 	"github.com/JustWorking42/go-password-manager/proto"
 	"github.com/golang/mock/gomock"
-	"golang.org/x/exp/slices"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
@@ -51,13 +51,8 @@ func TestRegister(t *testing.T) {
 			tt.mockSetup(mockClient)
 			token, err := client.Register(context.Background(), tt.login, tt.password)
 
-			if err != nil {
-				t.Errorf("Register returned an error: %v", err)
-			}
-
-			if token != tt.expectedToken {
-				t.Errorf("Expected token %q, got %q", tt.expectedToken, token)
-			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedToken, token)
 		})
 	}
 }
@@ -101,13 +96,8 @@ func TestLogin(t *testing.T) {
 			tt.mockSetup(mockClient)
 			token, err := client.Login(context.Background(), tt.login, tt.password)
 
-			if err != nil {
-				t.Errorf("Login returned an error: %v", err)
-			}
-
-			if token != tt.expectedToken {
-				t.Errorf("Expected token %q, got %q", tt.expectedToken, token)
-			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedToken, token)
 		})
 	}
 }
@@ -149,9 +139,7 @@ func TestAddPassword(t *testing.T) {
 			tt.mockSetup(mockClient)
 			err := client.AddPassword(context.Background(), tt.pass)
 
-			if err != nil {
-				t.Errorf("AddPassword returned an error: %v", err)
-			}
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -197,13 +185,11 @@ func TestGetPassword(t *testing.T) {
 			tt.mockSetup(mockClient)
 			password, err := client.GetPassword(context.Background(), tt.name)
 
-			if err != nil {
-				t.Errorf("GetPassword returned an error: %v", err)
-			}
+			assert.NoError(t, err)
 
-			if password.Name != tt.expectedPassword.Name || password.Login != tt.expectedPassword.Login || password.Password != tt.expectedPassword.Password {
-				t.Errorf("Expected password %v, got %v", tt.expectedPassword, password)
-			}
+			assert.Equal(t, tt.expectedPassword.Name, password.Name)
+			assert.Equal(t, tt.expectedPassword.Login, password.Login)
+			assert.Equal(t, tt.expectedPassword.Password, password.Password)
 		})
 	}
 }
@@ -247,9 +233,7 @@ func TestAddCard(t *testing.T) {
 			tt.mockSetup(mockClient)
 			err := client.AddCard(context.Background(), tt.card)
 
-			if err != nil {
-				t.Errorf("AddCard returned an error: %v", err)
-			}
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -301,13 +285,12 @@ func TestGetCard(t *testing.T) {
 			tt.mockSetup(mockClient)
 			card, err := client.GetCard(context.Background(), tt.cardName)
 
-			if err != nil {
-				t.Errorf("GetCard returned an error: %v", err)
-			}
-
-			if card.CardName != tt.expectedCard.CardName || card.CardNumber != tt.expectedCard.CardNumber || card.CardCVC != tt.expectedCard.CardCVC || card.CardDate != tt.expectedCard.CardDate || card.CardFI != tt.expectedCard.CardFI {
-				t.Errorf("Expected card %v, got %v", tt.expectedCard, card)
-			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedCard.CardName, card.CardName)
+			assert.Equal(t, tt.expectedCard.CardNumber, card.CardNumber)
+			assert.Equal(t, tt.expectedCard.CardCVC, card.CardCVC)
+			assert.Equal(t, tt.expectedCard.CardDate, card.CardDate)
+			assert.Equal(t, tt.expectedCard.CardFI, card.CardFI)
 		})
 	}
 }
@@ -348,9 +331,7 @@ func TestAddNote(t *testing.T) {
 			tt.mockSetup(mockClient)
 			err := client.AddNote(context.Background(), tt.note)
 
-			if err != nil {
-				t.Errorf("AddNote returned an error: %v", err)
-			}
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -396,13 +377,9 @@ func TestGetNote(t *testing.T) {
 			tt.mockSetup(mockClient)
 			note, err := client.GetNote(context.Background(), tt.noteName)
 
-			if err != nil {
-				t.Errorf("GetNote returned an error: %v", err)
-			}
-
-			if note.NoteName != tt.expectedNote.NoteName || note.Note != tt.expectedNote.Note {
-				t.Errorf("Expected note %v, got %v", tt.expectedNote, note)
-			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedNote.NoteName, note.NoteName)
+			assert.Equal(t, tt.expectedNote.Note, note.Note)
 		})
 	}
 }
@@ -443,9 +420,7 @@ func TestAddBytes(t *testing.T) {
 			tt.mockSetup(mockClient)
 			err := client.AddBytes(context.Background(), tt.binaryData)
 
-			if err != nil {
-				t.Errorf("AddBytes returned an error: %v", err)
-			}
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -491,13 +466,9 @@ func TestGetBytes(t *testing.T) {
 			tt.mockSetup(mockClient)
 			bytes, err := client.GetBytes(context.Background(), tt.bytesName)
 
-			if err != nil {
-				t.Errorf("GetBytes returned an error: %v", err)
-			}
-
-			if bytes.BytesName != tt.expectedBytes.BytesName || !slices.Equal(bytes.Value, tt.expectedBytes.Value) {
-				t.Errorf("Expected bytes %v, got %v", tt.expectedBytes, bytes)
-			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedBytes.BytesName, bytes.BytesName)
+			assert.Equal(t, tt.expectedBytes.Value, bytes.Value)
 		})
 	}
 }

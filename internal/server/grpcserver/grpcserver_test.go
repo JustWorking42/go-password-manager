@@ -10,6 +10,7 @@ import (
 	"github.com/JustWorking42/go-password-manager/internal/server/storage"
 	"github.com/JustWorking42/go-password-manager/proto"
 	"github.com/golang/mock/gomock"
+	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc/metadata"
 )
@@ -89,10 +90,7 @@ func TestRegister(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
 			_, err := s.Register(context.Background(), tt.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Register() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -156,10 +154,7 @@ func TestLogin(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
 			_, err := s.Login(context.Background(), tt.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Login() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -211,10 +206,7 @@ func TestAddPassword(t *testing.T) {
 				"id": []string{testId},
 			})
 			_, err := s.AddPassword(ctx, tt.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AddPassword() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -266,10 +258,7 @@ func TestGetPassword(t *testing.T) {
 				"id": []string{testId},
 			})
 			_, err := s.GetPassword(ctx, tt.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetPassword() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -325,10 +314,7 @@ func TestAddCard(t *testing.T) {
 				"id": []string{testId},
 			})
 			_, err := s.AddCard(ctx, tt.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AddCard() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -382,10 +368,7 @@ func TestGetCard(t *testing.T) {
 				"id": []string{testId},
 			})
 			_, err := s.GetCard(ctx, tt.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetCard() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -435,10 +418,7 @@ func TestAddNote(t *testing.T) {
 				"id": []string{testId},
 			})
 			_, err := s.AddNote(ctx, tt.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AddNote() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -489,10 +469,7 @@ func TestGetNote(t *testing.T) {
 				"id": []string{testId},
 			})
 			_, err := s.GetNote(ctx, tt.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetNote() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -542,10 +519,7 @@ func TestAddBytes(t *testing.T) {
 				"id": []string{testId},
 			})
 			_, err := s.AddBytes(ctx, tt.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("AddBytes() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }
@@ -596,10 +570,7 @@ func TestGetBytes(t *testing.T) {
 				"id": []string{testId},
 			})
 			_, err := s.GetBytes(ctx, tt.req)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetBytes() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+			assert.Equal(t, tt.wantErr, err != nil)
 		})
 	}
 }

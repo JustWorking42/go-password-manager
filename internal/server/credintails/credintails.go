@@ -1,3 +1,4 @@
+// Package credintails provide function to create TransportCredentials for use with gRPC.
 package credintails
 
 import (
@@ -10,6 +11,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+// Credintails creates a TransportCredentials for use with gRPC.
 func Credentials(serverConfig grpcserver.Config) (credentials.TransportCredentials, error) {
 	pemClientCA, err := os.ReadFile(serverConfig.CACertPath)
 	if err != nil {

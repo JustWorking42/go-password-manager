@@ -1,3 +1,4 @@
+// Package auth provides authentication and authorization support.
 package auth
 
 import (
@@ -13,12 +14,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// Ayth struct fo authentication and authorization
 type Auth struct {
 	secret string
 }
 
+// NewAuth creates a new authentication and authorization
 func NewAuth(secret string) *Auth { return &Auth{secret: secret} }
 
+// NewToken creates a new JWT token from userID
 func (a *Auth) NewToken(userId primitive.ObjectID) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 
@@ -32,6 +36,7 @@ func (a *Auth) NewToken(userId primitive.ObjectID) (string, error) {
 	return tokenString, nil
 }
 
+// ParseToken parses a JWT token and returns the userID
 func (a *Auth) ParseToken(tokenString string) (primitive.ObjectID, error) {
 	token, err := parseToken(tokenString, a.secret)
 	if err != nil {
@@ -49,6 +54,7 @@ func (a *Auth) ParseToken(tokenString string) (primitive.ObjectID, error) {
 	return primitive.ObjectIDFromHex(id)
 }
 
+// OnlyAuthorizedInterceptor is a gRPC interceptor that checks if the request is authorized
 func (a *Auth) OnlyAuthorizedInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -70,6 +76,7 @@ func (a *Auth) OnlyAuthorizedInterceptor(ctx context.Context, req interface{}, i
 	return handler(newCtx, req)
 }
 
+// parseToken parses a JWT token string and returns the Token
 func parseToken(tokenString, secret string) (*jwt.Token, error) {
 	tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {

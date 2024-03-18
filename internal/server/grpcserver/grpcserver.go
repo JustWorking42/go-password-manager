@@ -1,3 +1,4 @@
+// Package grpcserver implements a gRPC server.
 package grpcserver
 
 import (
@@ -15,12 +16,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+// PassGRPCServer implements a gRPC server.
 type PassGRPCServer struct {
 	proto.UnimplementedPassManagerServer
 	db   storage.Storage
 	auth *auth.Auth
 }
 
+// NewPassGRPCServer creates a new PassGRPCServer.
 func NewPassGRPCServer(db storage.Storage, auth *auth.Auth) *PassGRPCServer {
 	return &PassGRPCServer{
 		db:   db,
@@ -30,6 +33,7 @@ func NewPassGRPCServer(db storage.Storage, auth *auth.Auth) *PassGRPCServer {
 
 var _ proto.PassManagerServer = (*PassGRPCServer)(nil)
 
+// Register handles the registration of a new user.
 func (s *PassGRPCServer) Register(ctx context.Context, req *proto.Creds) (*emptypb.Empty, error) {
 
 	if req.Login == "" || req.Password == "" {
@@ -64,6 +68,8 @@ func (s *PassGRPCServer) Register(ctx context.Context, req *proto.Creds) (*empty
 	return &emptypb.Empty{}, nil
 
 }
+
+// Login handles the login of a user.
 func (s *PassGRPCServer) Login(ctx context.Context, req *proto.Creds) (*emptypb.Empty, error) {
 
 	if req.Login == "" || req.Password == "" {
@@ -91,6 +97,7 @@ func (s *PassGRPCServer) Login(ctx context.Context, req *proto.Creds) (*emptypb.
 	return &emptypb.Empty{}, nil
 }
 
+// AddPassword handles the adding of a new password.
 func (s *PassGRPCServer) AddPassword(ctx context.Context, req *proto.Password) (*emptypb.Empty, error) {
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
@@ -117,6 +124,8 @@ func (s *PassGRPCServer) AddPassword(ctx context.Context, req *proto.Password) (
 	}
 	return &emptypb.Empty{}, nil
 }
+
+// GetPassword handles the getting of a password.
 func (s *PassGRPCServer) GetPassword(ctx context.Context, req *proto.GetPasswordRequest) (*proto.Password, error) {
 
 	md, ok := metadata.FromOutgoingContext(ctx)
@@ -145,6 +154,7 @@ func (s *PassGRPCServer) GetPassword(ctx context.Context, req *proto.GetPassword
 	}, nil
 }
 
+// AddCard handles the adding of a new card.
 func (s *PassGRPCServer) AddCard(ctx context.Context, req *proto.Card) (*emptypb.Empty, error) {
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
@@ -174,6 +184,7 @@ func (s *PassGRPCServer) AddCard(ctx context.Context, req *proto.Card) (*emptypb
 	return &emptypb.Empty{}, nil
 }
 
+// GetCard handles the getting of a card.
 func (s *PassGRPCServer) GetCard(ctx context.Context, req *proto.GetCardRequest) (*proto.Card, error) {
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
@@ -203,6 +214,7 @@ func (s *PassGRPCServer) GetCard(ctx context.Context, req *proto.GetCardRequest)
 	}, nil
 }
 
+// AddNote handles the adding of a new note.
 func (s *PassGRPCServer) AddNote(ctx context.Context, req *proto.Note) (*emptypb.Empty, error) {
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
@@ -229,6 +241,7 @@ func (s *PassGRPCServer) AddNote(ctx context.Context, req *proto.Note) (*emptypb
 	return &emptypb.Empty{}, nil
 }
 
+// GetNote handles the getting of a note.
 func (s *PassGRPCServer) GetNote(ctx context.Context, req *proto.GetNoteRequest) (*proto.Note, error) {
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
@@ -255,6 +268,7 @@ func (s *PassGRPCServer) GetNote(ctx context.Context, req *proto.GetNoteRequest)
 	}, nil
 }
 
+// AddByte handles the adding of a new byte.
 func (s *PassGRPCServer) AddBytes(ctx context.Context, req *proto.Bytes) (*emptypb.Empty, error) {
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
@@ -281,6 +295,7 @@ func (s *PassGRPCServer) AddBytes(ctx context.Context, req *proto.Bytes) (*empty
 	return &emptypb.Empty{}, nil
 }
 
+// GetBytes handles the getting of a byte.
 func (s *PassGRPCServer) GetBytes(ctx context.Context, req *proto.GetBytesRequest) (*proto.Bytes, error) {
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {

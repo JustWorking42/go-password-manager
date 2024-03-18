@@ -66,8 +66,10 @@ func TestRegisterCommand(t *testing.T) {
 			err := cmd.Execute()
 
 			wg.Wait()
-			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -125,8 +127,10 @@ func TestLoginCommand(t *testing.T) {
 			err := cmd.Execute()
 
 			wg.Wait()
-			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -173,8 +177,10 @@ func TestAddPasswordCommand(t *testing.T) {
 
 			err := cmd.ExecuteContext(context.Background())
 
-			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -225,8 +231,10 @@ func TestGetPasswordCommand(t *testing.T) {
 
 			err := cmd.ExecuteContext(context.Background())
 
-			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -277,8 +285,10 @@ func TestAddCardCommand(t *testing.T) {
 
 			err := cmd.ExecuteContext(context.Background())
 
-			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -335,8 +345,10 @@ func TestGetCardCommand(t *testing.T) {
 
 			err := cmd.ExecuteContext(context.Background())
 
-			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -381,8 +393,10 @@ func TestAddNoteCommand(t *testing.T) {
 
 			err := cmd.ExecuteContext(context.Background())
 
-			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -430,8 +444,10 @@ func TestGetNoteCommand(t *testing.T) {
 
 			err := cmd.ExecuteContext(context.Background())
 
-			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -478,8 +494,10 @@ func TestAddBinaryDataCommand(t *testing.T) {
 
 			err := cmd.ExecuteContext(context.Background())
 
-			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -527,8 +545,10 @@ func TestGetBinaryDataCommand(t *testing.T) {
 
 			err := cmd.ExecuteContext(context.Background())
 
-			if (err != nil) != tc.expectedError {
-				t.Errorf("Expected error: %v, got: %v", tc.expectedError, err)
+			if tc.expectedError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

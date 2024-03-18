@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -16,24 +15,27 @@ import (
 	"github.com/JustWorking42/go-password-manager/internal/server/grpcserver"
 	"github.com/JustWorking42/go-password-manager/internal/server/storage/mongo"
 	"github.com/JustWorking42/go-password-manager/proto"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
 func main() {
 
+	logrus.SetLevel(logrus.InfoLevel)
+	logrus.SetFormatter(&logrus.JSONFormatter{})
 	var configPath string
 	var waitGroup sync.WaitGroup
 	flag.StringVar(&configPath, "c", "./server_config.yaml", "path to config file")
 
 	flag.Parse()
 	if configPath == "" {
-		log.Fatal("config path is required")
+		logrus.Fatal("no config file provided")
 	}
 
 	config, err := NewConfig(configPath)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	mainContext, cancel := context.WithCancel(context.Background())
@@ -41,14 +43,14 @@ func main() {
 
 	storage, err := mongo.NewMongoStorage(mainContext, config.DatabaseConfig)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	auth := auth.NewAuth(config.AuthConfig.Secret)
 
 	creds, err := credintails.Credentials(config.GRPCConfig)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	interceptors := grpc.ChainUnaryInterceptor(
@@ -68,11 +70,11 @@ func main() {
 		defer waitGroup.Done()
 		lis, err := net.Listen("tcp", config.GRPCConfig.Adress())
 		if err != nil {
-			log.Fatalf("failed to listen: %v", err)
+			logrus.Fatalf("failed to listen: %v", err)
 		}
-		log.Println("gRPC server is listening on", config.GRPCConfig.Adress())
+		logrus.Infof("gRPC server is listening on %s", config.GRPCConfig.Adress())
 		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
+			logrus.Fatalf("failed to serve: %v", err)
 		}
 	}()
 
@@ -85,5 +87,5 @@ func main() {
 
 	grpcServer.GracefulStop()
 	waitGroup.Wait()
-	println("Server exiting")
+	logrus.Info("gRPC server stopped")
 }

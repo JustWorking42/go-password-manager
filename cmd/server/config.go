@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/JustWorking42/go-password-manager/internal/common/mapper"
 	"github.com/JustWorking42/go-password-manager/internal/server/auth"
 	"github.com/JustWorking42/go-password-manager/internal/server/grpcserver"
 	"github.com/JustWorking42/go-password-manager/internal/server/storage"
@@ -20,8 +21,9 @@ func NewConfig(configPath string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	expandCofig := os.Expand(string(data), mapper.EnvyMapper)
 	var config Config
-	err = yaml.Unmarshal(data, &config)
+	err = yaml.Unmarshal([]byte(expandCofig), &config)
 	if err != nil {
 		return nil, err
 	}

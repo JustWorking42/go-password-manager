@@ -4,12 +4,14 @@ import (
 	"context"
 	_ "embed"
 	"log"
+	"os"
 
 	"github.com/JustWorking42/go-password-manager/internal/client/commands"
 	"github.com/JustWorking42/go-password-manager/internal/client/grpcclient"
 	"github.com/JustWorking42/go-password-manager/internal/client/passwordreader"
 	"github.com/JustWorking42/go-password-manager/internal/client/repository"
 	"github.com/JustWorking42/go-password-manager/internal/client/session"
+	"github.com/JustWorking42/go-password-manager/internal/common/mapper"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -19,8 +21,10 @@ var configFile []byte
 
 func main() {
 	var rootCmd = rootCmd()
+	expandedConfig := os.Expand(string(configFile), mapper.EnvyMapper)
+
 	var config Config
-	err := yaml.Unmarshal(configFile, &config)
+	err := yaml.Unmarshal([]byte(expandedConfig), &config)
 	if err != nil {
 		log.Fatal(err)
 	}
