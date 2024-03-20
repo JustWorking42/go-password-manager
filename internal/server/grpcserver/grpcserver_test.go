@@ -55,6 +55,17 @@ func TestRegister(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "LoginNotEnabledError",
+			req: &proto.Creds{
+				Login:    "test",
+				Password: "password",
+			},
+			setup: func() {
+				mockStorage.EXPECT().IsLoginEnabled(gomock.Any(), "test").Return(false, errors.New("error"))
+			},
+			wantErr: true,
+		},
+		{
 			name: "RegisterWithEmptyLogin",
 			req: &proto.Creds{
 				Login:    "",
@@ -138,6 +149,24 @@ func TestLogin(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "LoginWithEmptyLogin",
+			req: &proto.Creds{
+				Login:    "",
+				Password: "password",
+			},
+			setup:   func() {},
+			wantErr: true,
+		},
+		{
+			name: "LoginWithEmptyPassword",
+			req: &proto.Creds{
+				Login:    "test",
+				Password: "",
+			},
+			setup:   func() {},
+			wantErr: true,
+		},
+		{
 			name: "NonExistentUser",
 			req: &proto.Creds{
 				Login:    "nonexistent",
@@ -166,7 +195,7 @@ func TestAddPassword(t *testing.T) {
 	mockStorage := storage.NewMockStorage(ctrl)
 	auth := auth.NewAuth("1")
 	s := grpcserver.NewPassGRPCServer(mockStorage, auth)
-
+	var ctx context.Context
 	tests := []struct {
 		name    string
 		req     *proto.Password
@@ -181,6 +210,9 @@ func TestAddPassword(t *testing.T) {
 				ServicePassword: "password",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().AddPassword(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
 			wantErr: false,
@@ -193,7 +225,48 @@ func TestAddPassword(t *testing.T) {
 				ServicePassword: "password",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().AddPassword(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("storage error"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoMetadata",
+			req: &proto.Password{
+				ServiceName:     "service",
+				ServiceLogin:    "login",
+				ServicePassword: "password",
+			},
+			setup: func() {
+				ctx = context.Background()
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoIDInMetadata",
+			req: &proto.Password{
+				ServiceName:     "service",
+				ServiceLogin:    "login",
+				ServicePassword: "password",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{})
+			},
+			wantErr: true,
+		},
+		{
+			name: "EmptyIDInMetadata",
+			req: &proto.Password{
+				ServiceName:     "service",
+				ServiceLogin:    "login",
+				ServicePassword: "password",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{""},
+				})
 			},
 			wantErr: true,
 		},
@@ -202,9 +275,6 @@ func TestAddPassword(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			ctx := metadata.NewOutgoingContext(context.Background(), metadata.MD{
-				"id": []string{testId},
-			})
 			_, err := s.AddPassword(ctx, tt.req)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
@@ -218,7 +288,7 @@ func TestGetPassword(t *testing.T) {
 	mockStorage := storage.NewMockStorage(ctrl)
 	auth := auth.NewAuth("1")
 	s := grpcserver.NewPassGRPCServer(mockStorage, auth)
-
+	var ctx context.Context
 	tests := []struct {
 		name    string
 		req     *proto.GetPasswordRequest
@@ -231,6 +301,9 @@ func TestGetPassword(t *testing.T) {
 				ServiceName: "service",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().GetPassword(gomock.Any(), gomock.Any(), "service").Return(storage.PasswordData{
 					ServiceName:     "service",
 					ServiceLogin:    "login",
@@ -245,7 +318,42 @@ func TestGetPassword(t *testing.T) {
 				ServiceName: "service",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().GetPassword(gomock.Any(), gomock.Any(), "service").Return(storage.PasswordData{}, errors.New("storage error"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoMetadata",
+			req: &proto.GetPasswordRequest{
+				ServiceName: "service",
+			},
+			setup: func() {
+				ctx = context.Background()
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoIDInMetadata",
+			req: &proto.GetPasswordRequest{
+				ServiceName: "service",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{})
+			},
+			wantErr: true,
+		},
+		{
+			name: "EmptyIDInMetadata",
+			req: &proto.GetPasswordRequest{
+				ServiceName: "service",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{""},
+				})
 			},
 			wantErr: true,
 		},
@@ -254,9 +362,6 @@ func TestGetPassword(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			ctx := metadata.NewOutgoingContext(context.Background(), metadata.MD{
-				"id": []string{testId},
-			})
 			_, err := s.GetPassword(ctx, tt.req)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
@@ -270,7 +375,7 @@ func TestAddCard(t *testing.T) {
 	mockStorage := storage.NewMockStorage(ctrl)
 	auth := auth.NewAuth("1")
 	s := grpcserver.NewPassGRPCServer(mockStorage, auth)
-
+	var ctx context.Context
 	tests := []struct {
 		name    string
 		req     *proto.Card
@@ -287,6 +392,9 @@ func TestAddCard(t *testing.T) {
 				CardFI:     "123456",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().AddCard(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
 			wantErr: false,
@@ -301,7 +409,54 @@ func TestAddCard(t *testing.T) {
 				CardFI:     "123456",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().AddCard(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("storage error"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoMetadata",
+			req: &proto.Card{
+				CardName:   "card",
+				CardNumber: "123456789012345",
+				CardCVC:    "123",
+				CardDate:   "12/24",
+				CardFI:     "123456",
+			},
+			setup: func() {
+				ctx = context.Background()
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoIDInMetadata",
+			req: &proto.Card{
+				CardName:   "card",
+				CardNumber: "123456789012345",
+				CardCVC:    "123",
+				CardDate:   "12/24",
+				CardFI:     "123456",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{})
+			},
+			wantErr: true,
+		},
+		{
+			name: "EmptyIDInMetadata",
+			req: &proto.Card{
+				CardName:   "card",
+				CardNumber: "123456789012345",
+				CardCVC:    "123",
+				CardDate:   "12/24",
+				CardFI:     "123456",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{""},
+				})
 			},
 			wantErr: true,
 		},
@@ -310,9 +465,6 @@ func TestAddCard(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			ctx := metadata.NewOutgoingContext(context.Background(), metadata.MD{
-				"id": []string{testId},
-			})
 			_, err := s.AddCard(ctx, tt.req)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
@@ -326,7 +478,7 @@ func TestGetCard(t *testing.T) {
 	mockStorage := storage.NewMockStorage(ctrl)
 	auth := auth.NewAuth("1")
 	s := grpcserver.NewPassGRPCServer(mockStorage, auth)
-
+	var ctx context.Context
 	tests := []struct {
 		name    string
 		req     *proto.GetCardRequest
@@ -339,6 +491,9 @@ func TestGetCard(t *testing.T) {
 				CardName: "test_card",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().GetCard(gomock.Any(), gomock.Any(), "test_card").Return(storage.CardData{
 					CardName: "test_card",
 					Number:   "123456789012345",
@@ -355,7 +510,42 @@ func TestGetCard(t *testing.T) {
 				CardName: "nonexistent_card",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().GetCard(gomock.Any(), gomock.Any(), "nonexistent_card").Return(storage.CardData{}, errors.New("card not found"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoMetadata",
+			req: &proto.GetCardRequest{
+				CardName: "test_card",
+			},
+			setup: func() {
+				ctx = context.Background()
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoIDInMetadata",
+			req: &proto.GetCardRequest{
+				CardName: "test_card",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{})
+			},
+			wantErr: true,
+		},
+		{
+			name: "EmptyIDInMetadata",
+			req: &proto.GetCardRequest{
+				CardName: "test_card",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{""},
+				})
 			},
 			wantErr: true,
 		},
@@ -364,9 +554,6 @@ func TestGetCard(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			ctx := metadata.NewOutgoingContext(context.Background(), metadata.MD{
-				"id": []string{testId},
-			})
 			_, err := s.GetCard(ctx, tt.req)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
@@ -380,7 +567,7 @@ func TestAddNote(t *testing.T) {
 	mockStorage := storage.NewMockStorage(ctrl)
 	auth := auth.NewAuth("1")
 	s := grpcserver.NewPassGRPCServer(mockStorage, auth)
-
+	var ctx context.Context
 	tests := []struct {
 		name    string
 		req     *proto.Note
@@ -394,6 +581,9 @@ func TestAddNote(t *testing.T) {
 				Note:     "This is a test note",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().AddNote(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
 			wantErr: false,
@@ -405,7 +595,45 @@ func TestAddNote(t *testing.T) {
 				Note:     "This is a test note",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().AddNote(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("storage error"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoMetadata",
+			req: &proto.Note{
+				NoteName: "test_note",
+				Note:     "This is a test note",
+			},
+			setup: func() {
+				ctx = context.Background()
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoIDInMetadata",
+			req: &proto.Note{
+				NoteName: "test_note",
+				Note:     "This is a test note",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{})
+			},
+			wantErr: true,
+		},
+		{
+			name: "EmptyIDInMetadata",
+			req: &proto.Note{
+				NoteName: "test_note",
+				Note:     "This is a test note",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{""},
+				})
 			},
 			wantErr: true,
 		},
@@ -414,9 +642,6 @@ func TestAddNote(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			ctx := metadata.NewOutgoingContext(context.Background(), metadata.MD{
-				"id": []string{testId},
-			})
 			_, err := s.AddNote(ctx, tt.req)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
@@ -430,7 +655,7 @@ func TestGetNote(t *testing.T) {
 	mockStorage := storage.NewMockStorage(ctrl)
 	auth := auth.NewAuth("1")
 	s := grpcserver.NewPassGRPCServer(mockStorage, auth)
-
+	var ctx context.Context
 	tests := []struct {
 		name    string
 		req     *proto.GetNoteRequest
@@ -443,6 +668,9 @@ func TestGetNote(t *testing.T) {
 				NoteName: "test_note",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().GetNote(gomock.Any(), gomock.Any(), "test_note").Return(storage.Note{
 					Name: "test_note",
 					Text: "This is a test note",
@@ -456,7 +684,42 @@ func TestGetNote(t *testing.T) {
 				NoteName: "nonexistent_note",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().GetNote(gomock.Any(), gomock.Any(), "nonexistent_note").Return(storage.Note{}, errors.New("note not found"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoMetadata",
+			req: &proto.GetNoteRequest{
+				NoteName: "test_note",
+			},
+			setup: func() {
+				ctx = context.Background()
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoIDInMetadata",
+			req: &proto.GetNoteRequest{
+				NoteName: "test_note",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{})
+			},
+			wantErr: true,
+		},
+		{
+			name: "EmptyIDInMetadata",
+			req: &proto.GetNoteRequest{
+				NoteName: "test_note",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{""},
+				})
 			},
 			wantErr: true,
 		},
@@ -465,9 +728,6 @@ func TestGetNote(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			ctx := metadata.NewOutgoingContext(context.Background(), metadata.MD{
-				"id": []string{testId},
-			})
 			_, err := s.GetNote(ctx, tt.req)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
@@ -481,7 +741,7 @@ func TestAddBytes(t *testing.T) {
 	mockStorage := storage.NewMockStorage(ctrl)
 	auth := auth.NewAuth("1")
 	s := grpcserver.NewPassGRPCServer(mockStorage, auth)
-
+	var ctx context.Context
 	tests := []struct {
 		name    string
 		req     *proto.Bytes
@@ -495,6 +755,9 @@ func TestAddBytes(t *testing.T) {
 				Value:     []byte("This is a test binary data"),
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().AddBytes(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 			},
 			wantErr: false,
@@ -506,7 +769,45 @@ func TestAddBytes(t *testing.T) {
 				Value:     []byte("This is a test binary data"),
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().AddBytes(gomock.Any(), gomock.Any(), gomock.Any()).Return(errors.New("storage error"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoMetadata",
+			req: &proto.Bytes{
+				BytesName: "test_binary",
+				Value:     []byte("This is a test binary data"),
+			},
+			setup: func() {
+				ctx = context.Background()
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoIDInMetadata",
+			req: &proto.Bytes{
+				BytesName: "test_binary",
+				Value:     []byte("This is a test binary data"),
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{})
+			},
+			wantErr: true,
+		},
+		{
+			name: "EmptyIDInMetadata",
+			req: &proto.Bytes{
+				BytesName: "test_binary",
+				Value:     []byte("This is a test binary data"),
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(ctx, metadata.MD{
+					"id": []string{""},
+				})
 			},
 			wantErr: true,
 		},
@@ -515,9 +816,6 @@ func TestAddBytes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			ctx := metadata.NewOutgoingContext(context.Background(), metadata.MD{
-				"id": []string{testId},
-			})
 			_, err := s.AddBytes(ctx, tt.req)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})
@@ -531,6 +829,7 @@ func TestGetBytes(t *testing.T) {
 	mockStorage := storage.NewMockStorage(ctrl)
 	auth := auth.NewAuth("1")
 	s := grpcserver.NewPassGRPCServer(mockStorage, auth)
+	var ctx context.Context
 
 	tests := []struct {
 		name    string
@@ -544,6 +843,9 @@ func TestGetBytes(t *testing.T) {
 				BytesName: "test_binary",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().GetBytes(gomock.Any(), gomock.Any(), "test_binary").Return(storage.BinaryData{
 					Name: "test_binary",
 					Data: []byte("This is a test binary data"),
@@ -557,7 +859,42 @@ func TestGetBytes(t *testing.T) {
 				BytesName: "nonexistent_binary",
 			},
 			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{testId},
+				})
 				mockStorage.EXPECT().GetBytes(gomock.Any(), gomock.Any(), "nonexistent_binary").Return(storage.BinaryData{}, errors.New("binary data not found"))
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoMetadata",
+			req: &proto.GetBytesRequest{
+				BytesName: "test_binary",
+			},
+			setup: func() {
+				ctx = context.Background()
+			},
+			wantErr: true,
+		},
+		{
+			name: "NoIDInMetadata",
+			req: &proto.GetBytesRequest{
+				BytesName: "test_binary",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{})
+			},
+			wantErr: true,
+		},
+		{
+			name: "EmptyIDInMetadata",
+			req: &proto.GetBytesRequest{
+				BytesName: "test_binary",
+			},
+			setup: func() {
+				ctx = metadata.NewOutgoingContext(context.Background(), metadata.MD{
+					"id": []string{""},
+				})
 			},
 			wantErr: true,
 		},
@@ -566,9 +903,6 @@ func TestGetBytes(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.setup()
-			ctx := metadata.NewOutgoingContext(context.Background(), metadata.MD{
-				"id": []string{testId},
-			})
 			_, err := s.GetBytes(ctx, tt.req)
 			assert.Equal(t, tt.wantErr, err != nil)
 		})

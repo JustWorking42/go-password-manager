@@ -55,25 +55,41 @@ func TestGetSession(t *testing.T) {
 
 	sm := GetSessionManager()
 
-	err = sm.SetSession(Session{JWT: "test_jwt"})
-	assert.NoError(t, err)
-
 	testCases := []struct {
-		name          string
-		expectedError bool
+		name            string
+		expectedError   bool
+		expectedSession Session
+		setup           func()
 	}{
 		{
-			name:          "Get Session",
-			expectedError: false,
+			name:            "Get Empty Session",
+			expectedSession: Session{},
+			expectedError:   false,
+			setup: func() {
+				err := sm.SetSession(Session{})
+				assert.NoError(t, err)
+			},
+		},
+		{
+			name:            "Get Succes Session",
+			expectedSession: Session{JWT: "test_jwt"},
+			expectedError:   false,
+			setup: func() {
+				err = sm.SetSession(Session{JWT: "test_jwt"})
+				assert.NoError(t, err)
+			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := sm.GetSession()
+			tc.setup()
+
+			session, err := sm.GetSession()
 			if tc.expectedError {
 				assert.Error(t, err)
 			} else {
+				assert.Equal(t, tc.expectedSession, session)
 				assert.NoError(t, err)
 			}
 		})

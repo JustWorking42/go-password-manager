@@ -21,7 +21,6 @@ type PassGRPCClient struct {
 	conn *grpc.ClientConn
 }
 
-//go:noinline
 func InitAndGetPassGRPCClient(ctx context.Context, config Config) (*PassGRPCClient, error) {
 
 	pemServerCA, err := os.ReadFile(config.CACertPath)
