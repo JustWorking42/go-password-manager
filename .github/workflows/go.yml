@@ -19,7 +19,7 @@ jobs:
       with:
         go-version: '1.22'
     - name: Build Client
-      run: go build -v -o client ./cmd/client/
+      run: go build -v -o pass ./cmd/client/
     - name: Build Server
       run: go build -v -o server ./cmd/server/
     - name: Test
@@ -29,5 +29,5 @@ jobs:
       with:
         name: ${{ matrix.os }}-build
         path: |
-          ./client
+          ./pass-client
           ./server

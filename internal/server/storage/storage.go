@@ -32,5 +32,5 @@ type Storage interface {
 	// GetBytes retrieves binary data by user ID and binary name.
 	GetBytes(ctx context.Context, id primitive.ObjectID, binaryName string) (BinaryData, error)
 	// Close closes the storage connection.
-	Close(ctx context.Context)
+	Close(ctx context.Context) error
 }

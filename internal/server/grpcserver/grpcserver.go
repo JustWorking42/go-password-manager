@@ -7,6 +7,7 @@ import (
 	"github.com/JustWorking42/go-password-manager/internal/server/auth"
 	"github.com/JustWorking42/go-password-manager/internal/server/storage"
 	"github.com/JustWorking42/go-password-manager/proto"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc"
@@ -37,34 +38,41 @@ var _ proto.PassManagerServer = (*PassGRPCServer)(nil)
 func (s *PassGRPCServer) Register(ctx context.Context, req *proto.Creds) (*emptypb.Empty, error) {
 
 	if req.Login == "" || req.Password == "" {
+		logrus.Error("Login or password is empty")
 		return nil, status.Error(codes.InvalidArgument, "login and password must not be empty")
 	}
 
 	isEnabled, err := s.db.IsLoginEnabled(ctx, req.Login)
 	if err != nil {
+		logrus.Errorf("Error checking if login is enabled: %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if !isEnabled {
+		logrus.Error("Login is not enabled")
 		return nil, status.Error(codes.InvalidArgument, "login is not enabled")
 	}
 	passHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
+		logrus.Errorf("Error generating password hash: %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	id, err := s.db.AddUser(ctx, storage.NewUser(req.Login, passHash))
 	if err != nil {
+		logrus.Errorf("Error adding user: %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	jwt, err := s.auth.NewToken(id)
 	if err != nil {
+		logrus.Errorf("Error generating JWT token: %v", err)
 		return nil, status.Error(codes.Internal, err.Error())
 
 	}
 
 	md := metadata.Pairs("authorization", "Bearer "+jwt)
 	grpc.SetHeader(ctx, md)
+	logrus.Infof("User %s registered successfully", req.Login)
 	return &emptypb.Empty{}, nil
 
 }
@@ -73,27 +81,31 @@ func (s *PassGRPCServer) Register(ctx context.Context, req *proto.Creds) (*empty
 func (s *PassGRPCServer) Login(ctx context.Context, req *proto.Creds) (*emptypb.Empty, error) {
 
 	if req.Login == "" || req.Password == "" {
+		logrus.Error("Login or password is empty")
 		return nil, status.Error(codes.InvalidArgument, "login and password must not be empty")
 	}
 
 	user, err := s.db.GetUser(ctx, req.Login)
 	if err != nil {
+		logrus.WithError(err).Errorf("Error retrieving user %s", req.Login)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	err = bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(req.Password))
 	if err != nil {
+		logrus.WithError(err).Errorf("Invalid login or password for user %s", req.Login)
 		return nil, status.Error(codes.InvalidArgument, "invalid login or password")
 	}
 
 	jwt, err := s.auth.NewToken(user.ID)
-
 	if err != nil {
+		logrus.WithError(err).Errorf("Error generating JWT token for user %s", req.Login)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	md := metadata.Pairs("authorization", "Bearer "+jwt)
 	grpc.SetHeader(ctx, md)
+	logrus.Infof("User %s logged in successfully", req.Login)
 	return &emptypb.Empty{}, nil
 }
 
@@ -101,6 +113,7 @@ func (s *PassGRPCServer) Login(ctx context.Context, req *proto.Creds) (*emptypb.
 func (s *PassGRPCServer) AddPassword(ctx context.Context, req *proto.Password) (*emptypb.Empty, error) {
 	primitiveID, err := getPrimitiveID(ctx)
 	if err != nil {
+		logrus.WithError(err).Error("Failed to get primitive ID")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -110,8 +123,10 @@ func (s *PassGRPCServer) AddPassword(ctx context.Context, req *proto.Password) (
 		ServicePassword: req.ServicePassword,
 	})
 	if err != nil {
+		logrus.WithError(err).Errorf("Failed to add password for user with ID %s", primitiveID)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	logrus.Infof("Password added successfully for user with ID %s", primitiveID)
 	return &emptypb.Empty{}, nil
 }
 
@@ -120,13 +135,16 @@ func (s *PassGRPCServer) GetPassword(ctx context.Context, req *proto.GetPassword
 
 	primitiveID, err := getPrimitiveID(ctx)
 	if err != nil {
+		logrus.WithError(err).Error("Failed to get primitive ID")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	passData, err := s.db.GetPassword(ctx, primitiveID, req.ServiceName)
 	if err != nil {
+		logrus.WithError(err).Errorf("Failed to get password for user with ID %s", primitiveID)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	logrus.Infof("Password retrieved successfully for user with ID %s", primitiveID)
 	return &proto.Password{
 		ServiceName:     passData.ServiceName,
 		ServiceLogin:    passData.ServiceLogin,
@@ -138,6 +156,7 @@ func (s *PassGRPCServer) GetPassword(ctx context.Context, req *proto.GetPassword
 func (s *PassGRPCServer) AddCard(ctx context.Context, req *proto.Card) (*emptypb.Empty, error) {
 	primitiveID, err := getPrimitiveID(ctx)
 	if err != nil {
+		logrus.WithError(err).Error("Failed to get primitive ID")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -149,8 +168,10 @@ func (s *PassGRPCServer) AddCard(ctx context.Context, req *proto.Card) (*emptypb
 		FI:       req.CardFI,
 	})
 	if err != nil {
+		logrus.WithError(err).Errorf("Failed to add card for user with ID %s", primitiveID)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	logrus.Infof("Card added successfully for user with ID %s", primitiveID)
 	return &emptypb.Empty{}, nil
 }
 
@@ -158,13 +179,16 @@ func (s *PassGRPCServer) AddCard(ctx context.Context, req *proto.Card) (*emptypb
 func (s *PassGRPCServer) GetCard(ctx context.Context, req *proto.GetCardRequest) (*proto.Card, error) {
 	primitiveID, err := getPrimitiveID(ctx)
 	if err != nil {
+		logrus.WithError(err).Error("Failed to get primitive ID")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	cardData, err := s.db.GetCard(ctx, primitiveID, req.CardName)
 	if err != nil {
+		logrus.WithError(err).Errorf("Failed to get card for user with ID %s", primitiveID)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	logrus.Infof("Card retrieved successfully for user with ID %s", primitiveID)
 	return &proto.Card{
 		CardName:   cardData.CardName,
 		CardNumber: cardData.Number,
@@ -178,6 +202,7 @@ func (s *PassGRPCServer) GetCard(ctx context.Context, req *proto.GetCardRequest)
 func (s *PassGRPCServer) AddNote(ctx context.Context, req *proto.Note) (*emptypb.Empty, error) {
 	primitiveID, err := getPrimitiveID(ctx)
 	if err != nil {
+		logrus.WithError(err).Error("Failed to get primitive ID")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -186,8 +211,10 @@ func (s *PassGRPCServer) AddNote(ctx context.Context, req *proto.Note) (*emptypb
 		Text: req.Note,
 	})
 	if err != nil {
+		logrus.WithError(err).Errorf("Failed to add note for user with ID %s", primitiveID)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	logrus.Infof("Note added successfully for user with ID %s", primitiveID)
 	return &emptypb.Empty{}, nil
 }
 
@@ -195,13 +222,16 @@ func (s *PassGRPCServer) AddNote(ctx context.Context, req *proto.Note) (*emptypb
 func (s *PassGRPCServer) GetNote(ctx context.Context, req *proto.GetNoteRequest) (*proto.Note, error) {
 	primitiveID, err := getPrimitiveID(ctx)
 	if err != nil {
+		logrus.WithError(err).Error("Failed to get primitive ID")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	noteData, err := s.db.GetNote(ctx, primitiveID, req.NoteName)
 	if err != nil {
+		logrus.WithError(err).Errorf("Failed to get note for user with ID %s", primitiveID)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	logrus.Infof("Note retrieved successfully for user with ID %s", primitiveID)
 	return &proto.Note{
 		NoteName: noteData.Name,
 		Note:     noteData.Text,
@@ -212,6 +242,7 @@ func (s *PassGRPCServer) GetNote(ctx context.Context, req *proto.GetNoteRequest)
 func (s *PassGRPCServer) AddBytes(ctx context.Context, req *proto.Bytes) (*emptypb.Empty, error) {
 	primitiveID, err := getPrimitiveID(ctx)
 	if err != nil {
+		logrus.WithError(err).Error("Failed to get primitive ID")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
@@ -220,8 +251,10 @@ func (s *PassGRPCServer) AddBytes(ctx context.Context, req *proto.Bytes) (*empty
 		Data: req.Value,
 	})
 	if err != nil {
+		logrus.WithError(err).Errorf("Failed to add bytes for user with ID %s", primitiveID)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	logrus.Infof("Bytes added successfully for user with ID %s", primitiveID)
 	return &emptypb.Empty{}, nil
 }
 
@@ -230,13 +263,16 @@ func (s *PassGRPCServer) GetBytes(ctx context.Context, req *proto.GetBytesReques
 
 	primitiveID, err := getPrimitiveID(ctx)
 	if err != nil {
+		logrus.WithError(err).Error("Failed to get primitive ID")
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	binaryData, err := s.db.GetBytes(ctx, primitiveID, req.BytesName)
 	if err != nil {
+		logrus.WithError(err).Errorf("Failed to get bytes for user with ID %s", primitiveID)
 		return nil, status.Error(codes.Internal, err.Error())
 	}
+	logrus.Infof("Bytes retrieved successfully for user with ID %s", primitiveID)
 	return &proto.Bytes{
 		BytesName: binaryData.Name,
 		Value:     binaryData.Data,
@@ -246,16 +282,20 @@ func (s *PassGRPCServer) GetBytes(ctx context.Context, req *proto.GetBytesReques
 func getPrimitiveID(ctx context.Context) (primitive.ObjectID, error) {
 	md, ok := metadata.FromOutgoingContext(ctx)
 	if !ok {
+		logrus.Error("No metadata")
 		return primitive.ObjectID{}, status.Error(codes.InvalidArgument, "no metadata")
 	}
 
 	ids := md.Get("id")
 	if len(ids) == 0 {
+		logrus.WithField("metadata", md).Error("No id in metadata")
 		return primitive.ObjectID{}, status.Error(codes.InvalidArgument, "no id in metadata")
 	}
 
 	primitiveID, err := primitive.ObjectIDFromHex(ids[0])
 	if err != nil {
+		logrus.WithField("ids", ids).Error("Failed to convert id to ObjectID")
+
 		return primitive.ObjectID{}, status.Error(codes.InvalidArgument, err.Error())
 	}
 

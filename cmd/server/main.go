@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
@@ -35,7 +36,7 @@ func main() {
 
 	config, err := NewConfig(configPath)
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.WithError(err).Fatal("failed to load config")
 	}
 
 	mainContext, cancel := context.WithCancel(context.Background())
@@ -43,14 +44,14 @@ func main() {
 
 	storage, err := mongo.NewMongoStorage(mainContext, config.DatabaseConfig)
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.WithError(err).Fatal("failed to initialize storage")
 	}
 
 	auth := auth.NewAuth(config.AuthConfig.Secret)
 
 	creds, err := credintails.Credentials(config.GRPCConfig)
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.WithError(err).Fatal("failed to initialize credentials")
 	}
 
 	interceptors := grpc.ChainUnaryInterceptor(
@@ -68,13 +69,13 @@ func main() {
 	waitGroup.Add(1)
 	go func() {
 		defer waitGroup.Done()
-		lis, err := net.Listen("tcp", config.GRPCConfig.Adress())
+		lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", config.GRPCConfig.Host, config.GRPCConfig.Port))
 		if err != nil {
-			logrus.Fatalf("failed to listen: %v", err)
+			logrus.WithError(err).Fatal("failed to listen")
 		}
-		logrus.Infof("gRPC server is listening on %s", config.GRPCConfig.Adress())
+		logrus.Infof("gRPC server is listening on %s:%s", config.GRPCConfig.Host, config.GRPCConfig.Port)
 		if err := grpcServer.Serve(lis); err != nil {
-			logrus.Fatalf("failed to serve: %v", err)
+			logrus.WithError(err).Fatal("failed to serve")
 		}
 	}()
 
@@ -82,7 +83,10 @@ func main() {
 	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
 	<-stopChan
 	stopContext, exit := context.WithTimeout(context.Background(), 5*time.Second)
-	storage.Close(stopContext)
+	err = storage.Close(stopContext)
+	if err != nil {
+		logrus.WithError(err).Error("failed to close storage")
+	}
 	defer exit()
 
 	grpcServer.GracefulStop()

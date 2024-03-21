@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -58,21 +59,24 @@ func (a *Auth) ParseToken(tokenString string) (primitive.ObjectID, error) {
 func (a *Auth) OnlyAuthorizedInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
+		logrus.WithContext(ctx).Error("metadata is not provided")
 		return nil, status.Errorf(codes.Unauthenticated, "metadata is not provided")
-
 	}
 
 	tokenString, ok := md["authorization"]
 	if !ok {
+		logrus.WithField("metadata", md).Error("authorization is not provided")
 		return nil, status.Errorf(codes.Unauthenticated, "authorization is not provided")
 	}
 
 	id, err := a.ParseToken(tokenString[0])
 	if err != nil {
+		logrus.WithError(err).Error("failed to parse token")
 		return nil, status.Errorf(codes.Unauthenticated, "authorization is not valid")
 	}
 	newCtx := metadata.AppendToOutgoingContext(ctx, "id", id.Hex())
 
+	logrus.WithField("id", id).Info("authorize successfully")
 	return handler(newCtx, req)
 }
 

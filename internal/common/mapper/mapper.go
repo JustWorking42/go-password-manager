@@ -1,3 +1,4 @@
+// Package mapper provides a mappers.
 package mapper
 
 import (
@@ -5,6 +6,7 @@ import (
 	"strings"
 )
 
+// EnvMapper is a mapper for environment variables.
 func EnvyMapper(placeholderName string) string {
 	split := strings.Split(placeholderName, ":")
 	defValue := ""

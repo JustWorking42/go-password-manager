@@ -1,10 +1,8 @@
 database:
- host: ${PASS_DB_HOST:roundhouse.proxy.rlwy.net}
- port: ${PASS_DB_PORT:37390}
- user: ${PASS_DB_USER:mongo}
- password: ${PASS_DB_PASSWORD:fcc64D6DA14hG1CDAFfFFFgbChfaaH3d}
  secret: ${PASS_DB_SECRET:secret}
+ set: mongodb://mongo:kCAGjooRJZMdUrLwkYyoOsvlimBDXjsc@roundhouse.proxy.rlwy.net:23283,monorail.proxy.rlwy.net:33179,roundhouse.proxy.rlwy.net:41753/?replicaSet=rs0&authSource=admin
 grpc:
+ host: ${PASS_GRPC_HOST:localhost}
  port: ${PASS_GRPC_PORT:50051}
  cert_path: ${PASS_SERVER_CERT_PATH:../creds/server/server-cert.pem}
  key_path: ${PASS_SERVER_KEY_PATH:../creds/server/server-key.pem}

@@ -1,3 +1,4 @@
+// Package session provides session management.
 package session
 
 import (
@@ -6,24 +7,30 @@ import (
 	"github.com/dgraph-io/badger/v4"
 )
 
+// SesionKey is the key of session.
 const sessionKey = "session"
 
+// SessiomManager is a singleton of session manager.
 var sessiomManager SessionManager
 
+// SessionManager is a session manager inteface.
 type SessionManager interface {
 	GetSession() (Session, error)
 	SetSession(session Session) error
 	Close() error
 }
 
+// SessionManagerBadger is a decorator of badger.
 type SessionManagerBadger struct {
 	db *badger.DB
 }
 
+// Session is a session struct with jwt.
 type Session struct {
 	JWT string `json:"jwt"`
 }
 
+// InitAndGetSessionManager create and returns a session manager with encryption.
 func InitAndGetSessionManager(config *Config) (*SessionManagerBadger, error) {
 
 	opts := badger.DefaultOptions(config.SessionPath).
@@ -38,14 +45,17 @@ func InitAndGetSessionManager(config *Config) (*SessionManagerBadger, error) {
 	return &SessionManagerBadger{db: db}, nil
 }
 
+// SetSessionManager saves the session manager to singleton.
 func SetSessionManager(sm SessionManager) {
 	sessiomManager = sm
 }
 
+// GetSessionManager returns the session manager.
 func GetSessionManager() SessionManager {
 	return sessiomManager
 }
 
+// GetSession returns the current session.
 func (m *SessionManagerBadger) GetSession() (Session, error) {
 
 	var sessionBytes []byte
@@ -68,6 +78,7 @@ func (m *SessionManagerBadger) GetSession() (Session, error) {
 	return session, nil
 }
 
+// SetSession saves the current session.
 func (m *SessionManagerBadger) SetSession(session Session) error {
 	sessionBytes, err := json.Marshal(session)
 	if err != nil {
@@ -82,6 +93,7 @@ func (m *SessionManagerBadger) SetSession(session Session) error {
 	return nil
 }
 
+// Close closes the session manager conntection with badger.
 func (m *SessionManagerBadger) Close() error {
 	err := m.db.Close()
 	return err

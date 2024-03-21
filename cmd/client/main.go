@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	_ "embed"
-	"log"
 	"os"
 
 	"github.com/JustWorking42/go-password-manager/internal/client/commands"
@@ -12,6 +11,7 @@ import (
 	"github.com/JustWorking42/go-password-manager/internal/client/repository"
 	"github.com/JustWorking42/go-password-manager/internal/client/session"
 	"github.com/JustWorking42/go-password-manager/internal/common/mapper"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -20,27 +20,30 @@ import (
 var configFile []byte
 
 func main() {
+	logrus.SetLevel(logrus.InfoLevel)
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+
 	var rootCmd = rootCmd()
 	expandedConfig := os.Expand(string(configFile), mapper.EnvyMapper)
 
 	var config Config
 	err := yaml.Unmarshal([]byte(expandedConfig), &config)
 	if err != nil {
-		log.Fatal(err)
+		logrus.WithError(err).Fatal("failed to unmarshal config")
 	}
 	mainContext, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	client, err := grpcclient.InitAndGetPassGRPCClient(mainContext, config.GRPCCLientConfig)
 	if err != nil {
-		log.Fatal(err)
+		logrus.WithError(err).Fatal("Failed to initialize GRPC client")
 	}
 	repository.SetRepository(client)
 	defer client.Close()
 
 	manager, err := session.InitAndGetSessionManager(&config.SessionCofig)
 	if err != nil {
-		log.Fatal(err)
+		logrus.WithError(err).Fatal("Failed to initialize session manager")
 	}
 	session.SetSessionManager(manager)
 	defer session.GetSessionManager().Close()
@@ -62,7 +65,7 @@ func main() {
 	)
 
 	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
+		logrus.WithError(err).Fatal("Failed to execute command")
 	}
 }
 
